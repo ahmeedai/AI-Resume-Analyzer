@@ -3,7 +3,7 @@ import PyPDF2
 import io
 import openai
 
-# Streamlit page settings
+# Streamlit UI setup
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📃", layout="centered")
 st.title("📃 AI Resume Analyzer")
 st.markdown("Upload your resume and get feedback powered by AI!")
@@ -19,7 +19,8 @@ def extract_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
 
 def generate_feedback(text, job_role, api_key):
-    openai.api_key = api_key
+    client = openai.OpenAI(api_key=api_key)
+
     prompt = f"""
 Please analyze this resume and provide constructive feedback. 
 Focus on:
@@ -33,7 +34,7 @@ Resume:
 
 Give a clear and structured analysis.
 """
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are an expert resume reviewer."},
@@ -42,14 +43,14 @@ Give a clear and structured analysis.
         temperature=0.7,
         max_tokens=1000
     )
-    return response.choices[0].message["content"]
+    return response.choices[0].message.content
 
-# --- UI ---
-st.markdown("🔑 Enter your OpenAI API Key to continue:")
+# --- UI Elements ---
+st.markdown("🔑 Enter your OpenAI API Key:")
 api_key = st.text_input("API Key", type="password")
 
-uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)", type=["pdf", "txt"])
-job_role = st.text_input("Enter the job role you're targeting (optional)")
+uploaded_file = st.file_uploader("📄 Upload your resume (PDF or TXT)", type=["pdf", "txt"])
+job_role = st.text_input("🎯 Enter the job role you're targeting (optional)")
 analyze = st.button("Analyze Resume")
 
 if analyze:
@@ -67,7 +68,7 @@ if analyze:
 
                 feedback = generate_feedback(content, job_role, api_key)
 
-                st.success("Done!")
+                st.success("✅ Analysis Complete!")
                 st.markdown("### 📝 Feedback:")
                 st.markdown(feedback)
 
@@ -79,4 +80,4 @@ if analyze:
                 )
 
             except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+                st.error(f"An error occurred:\n\n{str(e)}")
