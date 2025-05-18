@@ -1,9 +1,9 @@
 import streamlit as st
 import PyPDF2
 import io
-from openai import OpenAI
+import openai
 
-# Page config
+# Streamlit page settings
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📃", layout="centered")
 st.title("📃 AI Resume Analyzer")
 st.markdown("Upload your resume and get feedback powered by AI!")
@@ -19,6 +19,7 @@ def extract_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
 
 def generate_feedback(text, job_role, api_key):
+    openai.api_key = api_key
     prompt = f"""
 Please analyze this resume and provide constructive feedback. 
 Focus on:
@@ -32,8 +33,7 @@ Resume:
 
 Give a clear and structured analysis.
 """
-    client = OpenAI(api_key=api_key)
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are an expert resume reviewer."},
@@ -42,9 +42,9 @@ Give a clear and structured analysis.
         temperature=0.7,
         max_tokens=1000
     )
-    return response.choices[0].message.content
+    return response.choices[0].message["content"]
 
-# --- UI Elements ---
+# --- UI ---
 st.markdown("🔑 Enter your OpenAI API Key to continue:")
 api_key = st.text_input("API Key", type="password")
 
