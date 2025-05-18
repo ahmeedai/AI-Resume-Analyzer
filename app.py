@@ -2,6 +2,7 @@ import streamlit as st
 import PyPDF2
 import io
 from openai import OpenAI
+import os
 # Streamlit page settings
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📃", layout="centered")
 st.title("📃 AI Resume Analyzer")
@@ -18,7 +19,9 @@ def extract_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
 
 def generate_feedback(text, job_role, api_key):
-    client = OpenAI(api_key=api_key)
+    # Set API key via environment variable instead of client init
+    os.environ["OPENAI_API_KEY"] = api_key
+    client = OpenAI()
     prompt = f"""
 Please analyze this resume and provide constructive feedback. 
 Focus on:
