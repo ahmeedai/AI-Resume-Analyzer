@@ -1,8 +1,8 @@
 import streamlit as st
 import PyPDF2
 import io
-from openai import OpenAI
-import os
+import openai
+
 # Streamlit page settings
 st.set_page_config(page_title="AI Resume Analyzer", page_icon="📃", layout="centered")
 st.title("📃 AI Resume Analyzer")
@@ -19,9 +19,7 @@ def extract_text(uploaded_file):
     return uploaded_file.read().decode("utf-8")
 
 def generate_feedback(text, job_role, api_key):
-    # Set API key via environment variable instead of client init
-    os.environ["OPENAI_API_KEY"] = api_key
-    client = OpenAI()
+    openai.api_key = api_key
     prompt = f"""
 Please analyze this resume and provide constructive feedback. 
 Focus on:
@@ -29,11 +27,13 @@ Focus on:
 2. Skills presentation
 3. Experience descriptions
 4. Improvements for {job_role or 'general applications'}
+
 Resume:
 {text}
+
 Give a clear and structured analysis.
 """
-    response = client.chat.completions.create(
+    response = openai.ChatCompletion.create(
         model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": "You are an expert resume reviewer."},
@@ -42,11 +42,12 @@ Give a clear and structured analysis.
         temperature=0.7,
         max_tokens=1000
     )
-    return response.choices[0].message.content
+    return response.choices[0].message["content"]
 
 # --- UI ---
 st.markdown("🔑 Enter your OpenAI API Key to continue:")
 api_key = st.text_input("API Key", type="password")
+
 uploaded_file = st.file_uploader("Upload your resume (PDF or TXT)", type=["pdf", "txt"])
 job_role = st.text_input("Enter the job role you're targeting (optional)")
 analyze = st.button("Analyze Resume")
@@ -63,15 +64,19 @@ if analyze:
                 if not content.strip():
                     st.error("The uploaded file is empty.")
                     st.stop()
+
                 feedback = generate_feedback(content, job_role, api_key)
+
                 st.success("Done!")
                 st.markdown("### 📝 Feedback:")
                 st.markdown(feedback)
+
                 st.download_button(
                     label="📥 Download Feedback Report",
                     data=feedback,
                     file_name="resume_feedback.txt",
                     mime="text/plain"
                 )
+
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
